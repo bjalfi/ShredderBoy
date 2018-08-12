@@ -19,6 +19,9 @@ local object_map = {}
 local garbage_space_x = 25
 local garbage_space_y =  5
 local garbage_space_w = 2
+local computer_position_x = 0
+local computer_position_y = 0
+
 
 local function get_player_map_index()
   return player_map_position[1] + player_map_position[2] * 60
@@ -31,7 +34,7 @@ local function draw_player()
 
   if player_carries_object then
     if player_tile == 17 then
-      spr(player_carries_object, x, y - 4, 0)
+      spr(player_carries_object[1], x, y - 4, 0)
     end
   end
 
@@ -40,15 +43,15 @@ local function draw_player()
 
   if player_carries_object then
     if player_tile == 16 then
-      spr(player_carries_object, x, y - 4, 0)
+      spr(player_carries_object[1], x, y - 4, 0)
       spr(256 + player_tile + 96, x, y - 4, 0)
     elseif player_tile == 17 then
       spr(256 + player_tile + 96, x, y - 4, 0)
     elseif player_tile == 18 then
-      spr(player_carries_object, x - 4, y - 4, 0)
+      spr(player_carries_object[1], x - 4, y - 4, 0)
       spr(256 + player_tile + 96, x - 3, y -4, 0)
     elseif player_tile == 19 then
-      spr(player_carries_object, x + 4, y - 4, 0)
+      spr(player_carries_object[1], x + 4, y - 4, 0)
       spr(256 + player_tile + 96, x + 3, y -4, 0)
     end
   end
@@ -122,7 +125,7 @@ local function object_map_take(map_x, map_y)
   local ret = nil
   if (obj) then
     ret = obj[#obj]
-    if (ret > 271) then
+    if (ret[1] > 271) then
       return nil
     end
     table.remove(obj, #obj)
@@ -170,10 +173,27 @@ local function object_map_put_shredder(id, map_x, map_y)
   else
     map_y = shredder_position_y
   end
-  object_map_replace(map_x, map_y, id)
-  object_map_replace(map_x + 1, map_y, id + 1)
-  object_map_replace(map_x, map_y +1, id + 16)
-  object_map_replace(map_x + 1, map_y +1, id + 16 + 1)
+  object_map_replace(map_x, map_y, {id})
+  object_map_replace(map_x + 1, map_y, {id + 1})
+  object_map_replace(map_x, map_y +1, {id + 16})
+  object_map_replace(map_x + 1, map_y +1, {id + 16 + 1})
+end
+
+local function object_map_put_computer(id, map_x, map_y)
+  if map_x then
+    computer_position_x = map_x
+  else
+    map_x = computer_position_x
+  end
+  if map_y then
+    computer_position_y = map_y
+  else
+    map_y = computer_position_y
+  end
+  object_map_replace(map_x, map_y, {id})
+  object_map_replace(map_x + 1, map_y, {id + 1})
+  object_map_replace(map_x, map_y +1, {id + 16})
+  object_map_replace(map_x + 1, map_y +1, {id + 16 + 1})
 end
 
 local shredder_old_id = 0
@@ -192,11 +212,11 @@ function update_shredder()
     end
     if shredder_is_running == 0 then
       local player_x, player_y = player_get_align_position()
-      if (shredder_position_x ~= player_x or shredder_position_y + 2~= player_y) and object_map_put(shredder_position_x, shredder_position_y + 2, 264) then
+      if (shredder_position_x ~= player_x or shredder_position_y + 2~= player_y) and object_map_put(shredder_position_x, shredder_position_y + 2, {264}) then
         if not player_can_move(player_map_position[1], player_map_position[2]) then
           player_map_position[1], player_map_position[2] = player_get_align_position()
         end
-      elseif (shredder_positionx ~= player_x + 1 or shredder_position_y + 2 ~= player_y) and object_map_put(shredder_position_x + 1, shredder_position_y + 2, 264) then
+      elseif (shredder_positionx ~= player_x + 1 or shredder_position_y + 2 ~= player_y) and object_map_put(shredder_position_x + 1, shredder_position_y + 2, {264}) then
         if not player_can_move(player_map_position[1], player_map_position[2]) then
           player_map_position[1], player_map_position[2] = player_get_align_position()
         end
@@ -227,12 +247,21 @@ function update_shredder()
   end
 end
 
-object_map_put_shredder(384, 10, 5)
+function update_computer()
+  for y = computer_position_y, computer_position_y + 2 do
+    for x = computer_position_x, computer_position_x + 2 do
 
-object_map_put(5,9,256)
-object_map_put(5,8,257)
-object_map_put(5,7,258)
-object_map_put(5,7,259)
+    end
+  end
+end
+
+object_map_put_shredder(384, 10, 5)
+object_map_put_computer(464, 15, 5)
+
+object_map_put(5,9,{256})
+object_map_put(5,8,{257})
+object_map_put(5,7,{258})
+object_map_put(5,7,{259})
 
 local function my_sort(a, b)
   return a[1] < b[1]
@@ -258,7 +287,7 @@ local function draw_objects()
       player_was_drawn = true
     end
     for i = 1, cnt do
-      spr(obj_array[i], map_x * 8, map_y * 8 - ((i - 1) * 4 ), 0)
+      spr(obj_array[i][1], map_x * 8, map_y * 8 - ((i - 1) * 4 ), 0)
     end
   end
   if not player_was_drawn then
@@ -309,7 +338,7 @@ local function new_documents_arrive(cnt)
     for x = document_space_x, document_space_x + document_space_w do
       for y = document_space_y, document_space_y + document_space_w do
         if(cnt > 0 and not collide_with_object(player_map_position[1], player_map_position[2], x, y)) then
-          if (object_map_put(x, y, 256)) then
+          if (object_map_put(x, y, {256})) then
             cnt = cnt - 1
           end
         end
@@ -324,7 +353,7 @@ local function run_garbage_collection()
     for y = garbage_space_y, garbage_space_y + garbage_space_w do
       while true do
         local obj = object_map_take(x, y)
-        if (obj == nil or obj ~= 264) then
+        if (obj == nil or obj[1] ~= 264) then
           break
         end
       end
