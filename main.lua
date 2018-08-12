@@ -230,15 +230,31 @@ function update_shredder()
     local object = nil
     if not object then
       object = object_map_take(shredder_position_x, shredder_position_y)
+      if object and object[1] ~= 256 then
+        object_map_put(shredder_position_x, shredder_position_y, object)
+        object = nil
+      end
     end
     if not object then
       object = object_map_take(shredder_position_x + 1, shredder_position_y)
+      if object and object[1] ~= 256 then
+        object_map_put(shredder_position_x + 1, shredder_position_y, object)
+        object = nil
+      end
     end
     if not object then
       object = object_map_take(shredder_position_x, shredder_position_y + 1)
+      if object and object[1] ~= 256 then
+        object_map_put(shredder_position_x, shredder_position_y + 1, object)
+        object = nil
+      end
     end
     if not object then
       object = object_map_take(shredder_position_x + 1, shredder_position_y + 1)
+      if object and object[1] ~= 256 then
+        object_map_put(shredder_position_x + 1, shredder_position_y + 1, object)
+        object = nil
+      end
     end
 
     if object then
@@ -250,7 +266,19 @@ end
 function update_computer()
   for y = computer_position_y, computer_position_y + 2 do
     for x = computer_position_x, computer_position_x + 2 do
-
+      local array = object_map_get(x, y)
+      if (array) then
+        for i = 1, #array do
+          if array[i][1] < 260 then
+            if nil == array[i][2] then
+              array[i][2] = {}
+            end
+            if array[i][2].scanned ~= true then
+              array[i][2].scanned = true
+            end
+          end
+        end
+      end
     end
   end
 end
@@ -361,6 +389,20 @@ local function run_garbage_collection()
   end
 end
 
+local function update_objects()
+  for idx, val in next,object_map do
+    if val then
+      for i = 1, #val do
+        if val[i][2] then
+          if val[i][2].scanned == true then
+            val[i][1] = 256
+          end
+        end
+      end
+    end
+  end
+end
+
 local function do_game()
   -- get user input
   tick = tick + 1
@@ -428,6 +470,10 @@ local function do_game()
   else
     player_animation = 0
   end
+
+  update_computer()
+
+  update_objects()
 
   update_shredder()
 
