@@ -30,9 +30,11 @@ local player_score = 0
 
 local document_delay = 60
 local document_amount = 4
-document_next_tick = 0
+local document_next_tick = 0
 
 local garbage_delay = 120
+
+local game_over_tick = 0
 
 
 local function get_player_map_index()
@@ -447,6 +449,9 @@ end
 local function game_init()
   game_running = true
   tick = 0
+  player_move_last_tick = 0
+  document_next_tick = 0
+  game_over_tick = 0
   player_score = 0
   player_map_position = {10, 5}
   player_tile = 16
@@ -484,7 +489,7 @@ local function do_game()
     document_next_tick = tick + document_delay * 60
   end
 
-  if tick & (garbage_delay * 60) == 0 then
+  if tick % (garbage_delay * 60) == 0 then
     run_garbage_collection()
   end
 
@@ -592,10 +597,13 @@ local function do_title()
 end
 
 local function do_game_over()
-    print ("Game Over", 50, 0, 2, false, 2)
-    print ("No Space Left For Documents", 20, 12, 2, false, 1)
-    print (string.format("your score was: %d", player_score), 20, 30, 2, false, 1)
-    print (string.format("you survived: %d minutes and %d seconds", math.floor(tick / (60 * 60)), math.floor((tick % (60 * 60)) / 60)), 20, 40, 2, false, 1)
+  local bg_color = 5
+  local fg_color = 11
+    rect (0, 15, 240, 70, bg_color)
+    print ("Game Over", 70, 20, fg_color, false, 2)
+    print ("No Space Left For Documents", 40, 32, fg_color, false, 1)
+    print (string.format("your score was: %d", player_score), 5, 50, fg_color, false, 1)
+    print (string.format("you have survived %d minutes and %d seconds", math.floor(tick / (60 * 60)), math.floor((tick % (60 * 60)) / 60)), 5, 60, fg_color, false, 1)
 end
 local first_start = true
 function TIC()
@@ -611,7 +619,8 @@ function TIC()
     end
   else
     do_game_over()
-    if btn(4) or btn(1) or btn(0) or btn(2) or btn(3) then
+    game_over_tick = game_over_tick + 1
+    if game_over_tick > 60 * 10 and (btn(4) or btn(1) or btn(0) or btn(2) or btn(3)) then
       game_init()
 
     end
