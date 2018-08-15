@@ -27,6 +27,7 @@ local garbage_space_w = 2
 local computer_position_x = 0
 local computer_position_y = 0
 local player_score = 0
+local collision_treshold = 6
 
 local document_delay = 60
 local document_amount = 4
@@ -77,14 +78,13 @@ end
 
 
 local function collide_with_object(player_x, player_y, object_x, object_y)
-  local treshold = 7
   local player_screen_x = player_x * 8
   local player_screen_y = player_y * 8
   local object_screen_x = object_x * 8
   local object_screen_y = object_y * 8
 
-  return math.abs((player_screen_x + 4)  - (object_screen_x + 4)) < treshold and
-  math.abs((player_screen_y + 4)  - (object_screen_y + 4)) < treshold
+  return math.abs((player_screen_x + 4)  - (object_screen_x + 4)) < collision_treshold and
+  math.abs((player_screen_y + 4)  - (object_screen_y + 4)) < collision_treshold
 
 end
 
@@ -115,20 +115,24 @@ local function player_get_align_position()
   return x, y
 end
 
+-- returns x, y, alternate_x, alternate_y
 local function player_looking_at()
+  local x_real, y_real = table.unpack(player_map_position)
   local x, y = player_get_align_position()
+  local x_diff = x_real - x
+  local y_diff = y_real - y
   if player_tile == 16 then
     -- down
-    return x, y + 1
+    return x, y + 1, (x_diff > 0) and (x + 1) or (x - 1), y + 1
   elseif player_tile == 17 then
     -- up
-    return x, y - 1
+    return x, y - 1, (x_diff > 0) and (x + 1) or (x - 1), y - 1
   elseif player_tile == 18 then
     -- left
-    return x -1, y
+    return x -1, y, x - 1, (y_diff > 0) and (y + 1) or (y - 1)
   elseif player_tile == 19 then
     --right
-    return x + 1, y
+    return x + 1, y, x + 1, (y_diff > 0) and (y + 1) or (y - 1)
   end
 end
 
@@ -351,22 +355,31 @@ local function player_action_move(x_move, y_move)
 end
 
 local function player_action_put_object()
-  local map_x, map_y = player_looking_at()
-  if object_map_put(map_x, map_y, player_carries_object) then
+  local map_x, map_y, alt_x, alt_y = player_looking_at()
+  if object_map_put(map_x, map_y, player_carries_object) or
+     object_map_put(alt_x, alt_y, player_carries_object) then
     player_carries_object = nil
     sfx(0, 10, 30)
   end
   if not player_can_move(table.unpack(player_map_position)) then
     -- player stock in object ... align
     local new_x, new_y = player_get_align_position()
-    player_map_position[1] = new_x
-    player_map_position[2] = new_y
+    if (player_tile == 16 or player_tile == 17) then
+      player_map_position[2] = new_y
+    else
+      player_map_position[1] = new_x
+    end
+
   end
 end
 
 local function player_action_get_object()
-  local map_x, map_y = player_looking_at()
+  local map_x, map_y, alt_x, alt_y = player_looking_at()
   local obj = object_map_take(map_x, map_y)
+
+  if (obj == nil) then
+    obj = object_map_take(alt_x, alt_y)
+  end
 
   if obj then
     player_carries_object = obj
@@ -492,7 +505,6 @@ local function do_game()
   if tick % (garbage_delay * 60) == 0 then
     run_garbage_collection()
   end
-
   if btn(0) then
     -- up
     if player_action_move(0, -player_speed) then
@@ -514,7 +526,9 @@ local function do_game()
       player_move = 1
     end
     player_tile = 19
-  elseif (btn(4)) then
+  end
+
+  if (btn(4)) then
     if last_button ~= 4 then
       last_button = 4;
       if player_carries_object then
@@ -530,12 +544,6 @@ local function do_game()
   -- draw map
   map(0, 0, 60, 17, 0, 0)
 
-  -- draw viewpoint this for debug ...
-  --local l_x, l_y = player_looking_at()
-  --l_x = l_x * 8
-  --l_y = l_y * 8
-  --spr(192, l_x, l_y)
-  -- draw viewpoint end
 
   -- draw player
   local x,y = table.unpack(player_map_position)
@@ -556,6 +564,15 @@ local function do_game()
   update_shredder()
 
   draw_objects()
+  --[[ draw viewpoint this for debug ...
+  local l_x, l_y, alt_x, alt_y = player_looking_at()
+  l_x = l_x * 8
+  l_y = l_y * 8
+  spr(192, l_x, l_y)
+  if (alt_x and alt_y) then
+    spr(195, alt_x * 8, alt_y * 8)
+  end
+  -- draw viewpoint end --]]
   local free_space = free_document_space()
   local color = 11
   if (free_space - document_amount > document_amount) then
