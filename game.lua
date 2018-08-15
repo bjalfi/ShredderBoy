@@ -3,7 +3,8 @@
 -- desc:   Try to get not out of space by using the shredder
 -- script: lua
 
-local player_speed = 1 / 16
+local player_speed_slow = 1 / 16
+local player_speed_fast = 1 / 12
 local player_map_position = {10,5}
 local player_move = 0
 local player_tile = 16
@@ -93,13 +94,17 @@ local function player_can_move(map_x, map_y, direction)
   local floor_y = math.floor(map_y)
   local ceil_x = math.ceil(map_x)
   local ceil_y = math.ceil(map_y)
-  if mget(floor_x, floor_y) < 192 or object_map_get(floor_x, floor_y) and collide_with_object(map_x, map_y, floor_x, floor_y)then
+  if (mget(floor_x, floor_y) < 192 or object_map_get(floor_x, floor_y)) and
+                                      collide_with_object(map_x, map_y, floor_x, floor_y) then
     return false
-  elseif  mget(floor_x, ceil_y) < 192 or object_map_get(floor_x, ceil_y) and collide_with_object(map_x, map_y, floor_x, ceil_y)then
+  elseif (mget(floor_x, ceil_y) < 192 or object_map_get(floor_x, ceil_y)) and
+                                         collide_with_object(map_x, map_y, floor_x, ceil_y) then
     return false
-  elseif mget(ceil_x, floor_y) < 192 or object_map_get(ceil_x, floor_y) and collide_with_object(map_x, map_y, ceil_x, floor_y)then
+  elseif (mget(ceil_x, floor_y) < 192 or object_map_get(ceil_x, floor_y)) and
+                                         collide_with_object(map_x, map_y, ceil_x, floor_y)then
     return false
-  elseif mget(ceil_x, ceil_y) < 192 or object_map_get(ceil_x, ceil_y) and collide_with_object(map_x, map_y, ceil_x, ceil_y) then
+  elseif (mget(ceil_x, ceil_y) < 192 or object_map_get(ceil_x, ceil_y)) and
+                                        collide_with_object(map_x, map_y, ceil_x, ceil_y) then
     return false
   end
 
@@ -315,6 +320,12 @@ local function my_sort(a, b)
   return a[1] < b[1]
 end
 
+local function draw_map_walls()
+  map(0, 8, 3, 1, 0, 8 * 8)
+  map(2, 10, 24, 1, 2 * 8, 10 * 8)
+  map(25, 7, 5, 1, 25 * 8, 7 * 8)
+end
+
 local function draw_objects()
   local player_was_drawn = false
   local player_index = get_player_map_index()
@@ -505,6 +516,9 @@ local function do_game()
   if tick % (garbage_delay * 60) == 0 then
     run_garbage_collection()
   end
+
+  local player_speed = player_carries_object and player_speed_slow or player_speed_fast
+
   if btn(0) then
     -- up
     if player_action_move(0, -player_speed) then
@@ -564,6 +578,11 @@ local function do_game()
   update_shredder()
 
   draw_objects()
+
+  -- post wall drawing (player may hide some of the front wall and that would
+  -- look bad
+  draw_map_walls()
+
   --[[ draw viewpoint this for debug ...
   local l_x, l_y, alt_x, alt_y = player_looking_at()
   l_x = l_x * 8
