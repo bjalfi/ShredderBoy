@@ -38,6 +38,30 @@ local garbage_delay = 120
 
 local game_over_tick = 0
 
+local btn_tick = {}
+
+local function btn_get_direction()
+  local ret = nil
+  local tmp_tick = 0
+  for i=0,3 do
+    if btn(i) then
+      if btn_tick[i+1] == nil then
+        btn_tick[i+1] = tick
+      end
+    else
+      btn_tick[i+1] = nil
+    end
+  end
+
+  for i = 0,3 do
+    if btn_tick[i+1] and btn_tick[i+1] > tmp_tick then
+      tmp_tick = btn_tick[i+1]
+      ret = i
+    end
+  end
+
+  return ret
+end
 
 local function get_player_map_index()
   return player_map_position[1] + player_map_position[2] * 60
@@ -546,24 +570,25 @@ local function do_game()
   end
 
   local player_speed = player_carries_object and player_speed_slow or player_speed_fast
+  local direction = btn_get_direction()
 
-  if btn(0) then
+  if direction == 0 then
     -- up
     if player_action_move(0, -player_speed) then
       player_move = 1
     end
     player_tile = 17
-  elseif btn(1) then
+  elseif direction == 1 then
     if player_action_move(0, player_speed) then
       player_move = 1
     end
     player_tile = 16
-  elseif (btn(2)) then
+  elseif direction == 2 then
     if player_action_move(-player_speed, 0) then
       player_move = 1
     end
     player_tile = 18
-  elseif (btn(3)) then
+  elseif direction == 3 then
     if player_action_move(player_speed, 0) then
       player_move = 1
     end
