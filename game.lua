@@ -235,7 +235,7 @@ local shredder_old_id = 0
 local shredder_new_id = 0
 function update_shredder()
   if shredder_is_running > 0 then
-    sfx(1, 0, -1, 1, 7)
+    sfx(1, 0, -1, 1, 2)
     shredder_is_running = shredder_is_running - 1
     if (shredder_is_running <= 210) then
       shredder_new_id = 32 + (math.floor((210 - shredder_is_running) / 30) % 7) * 2
@@ -262,7 +262,7 @@ function update_shredder()
       end
     end
   else
-    sfx(1, 0, 0, 1, 7)
+    sfx(1, 0, 0, 1, 2)
     object_map_put_shredder(384)
     local object = nil
     if not object then
@@ -322,7 +322,7 @@ function update_computer()
     end
   end
   if ret then
-    sfx(0, 60, 30)
+    sfx(0, 60, 10)
   end
   return ret
 end
@@ -384,7 +384,7 @@ local function player_action_put_object()
   if object_map_put(map_x, map_y, player_carries_object) or
      object_map_put(alt_x, alt_y, player_carries_object) then
     player_carries_object = nil
-    sfx(0, 10, 30)
+    sfx(1, 12, 2)
   else
     local new_x, new_y = player_behind_position()
     local old_x, old_y = player_get_align_position()
@@ -395,7 +395,7 @@ local function player_action_put_object()
       player_map_position[2] = new_y
       if object_map_put(old_x, old_y, player_carries_object) then
         player_carries_object = nil
-        sfx(0, 10, 30)
+        sfx(1, 12, 2)
       end
     end
 
@@ -422,7 +422,7 @@ local function player_action_get_object()
 
   if obj then
     player_carries_object = obj
-    sfx(0, 10, 30)
+    sfx(1, 12, 2)
   end
 end
 
@@ -663,6 +663,8 @@ end
 local function do_game_over()
   local bg_color = 5
   local fg_color = 11
+    -- stop any sound from shredder
+    sfx(1, 0, 0, 1, 7)
     rect (0, 15, 240, 70, bg_color)
     print ("Game Over", 70, 20, fg_color, false, 2)
     print ("No Space Left For Documents", 40, 32, fg_color, false, 1)
