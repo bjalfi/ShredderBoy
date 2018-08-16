@@ -141,6 +141,19 @@ local function player_looking_at()
   end
 end
 
+local function player_behind_position()
+  local x, y = table.unpack(player_map_position)
+  if player_tile == 16 then
+    return x, math.floor(y + 0.5) - 1
+  elseif player_tile == 17 then
+    return x, math.floor(y + 0.5) + 1
+  elseif player_tile == 18 then
+    return math.floor(x + 0.5) + 1, y
+  elseif player_tile == 19 then
+    return math.floor(x + 0.5) - 1, y
+  end
+end
+
 
 local function object_map_take(map_x, map_y)
   local obj = object_map[map_y * 60 + map_x]
@@ -372,6 +385,20 @@ local function player_action_put_object()
      object_map_put(alt_x, alt_y, player_carries_object) then
     player_carries_object = nil
     sfx(0, 10, 30)
+  else
+    local new_x, new_y = player_behind_position()
+    local old_x, old_y = player_get_align_position()
+    -- push player back and put packet on the players old position
+    -- when it is possible
+    if (player_can_move(new_x, new_y)) then
+      player_map_position[1] = new_x
+      player_map_position[2] = new_y
+      if object_map_put(old_x, old_y, player_carries_object) then
+        player_carries_object = nil
+        sfx(0, 10, 30)
+      end
+    end
+
   end
   if not player_can_move(table.unpack(player_map_position)) then
     -- player stock in object ... align
