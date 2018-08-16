@@ -321,9 +321,10 @@ local function my_sort(a, b)
 end
 
 local function draw_map_walls()
-  map(0, 8, 3, 1, 0, 8 * 8)
+  map(0, 8, 3, 2, 0, 8 * 8)
   map(2, 10, 24, 1, 2 * 8, 10 * 8)
-  map(25, 7, 5, 1, 25 * 8, 7 * 8)
+  map(25, 7, 5, 2, 25 * 8, 7 * 8)
+  map(25, 9, 1, 2, 25 * 8, 9 * 8)
 end
 
 local function draw_objects()
